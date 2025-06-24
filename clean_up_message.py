@@ -11,6 +11,8 @@ time = datetime.time(hour=0, minute=0, tzinfo=utc)
 CHANNELS_TO_DELETE_FROM = [
     #planned-events
     1383717273704857670,
+    #event-polls
+    1385130581599457413
 
 ]
 
