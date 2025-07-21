@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 utc = datetime.timezone.utc
 
 # If no tzinfo is given then UTC is assumed.
-time = datetime.time(hour=1, minute=0, tzinfo=utc)
+time = datetime.time(hour=1, minute=9, tzinfo=utc)
 
 CHANNELS_TO_DELETE_FROM = [
     #planned-events
@@ -15,6 +15,13 @@ CHANNELS_TO_DELETE_FROM = [
     1385130581599457413
 
 ]
+
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+intents.guilds = True
+
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 async def setup(bot):
     await bot.add_cog(MyCog(bot, CHANNELS_TO_DELETE_FROM))
