@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 utc = datetime.timezone.utc
 
 # If no tzinfo is given then UTC is assumed.
-time = datetime.time(hour=1, minute=9, tzinfo=utc)
+time = datetime.time(hour=2, minute=13, tzinfo=utc)
 
 CHANNELS_TO_DELETE_FROM = [
     #planned-events
@@ -20,7 +20,7 @@ async def setup(bot):
     await bot.add_cog(MyCog(bot, CHANNELS_TO_DELETE_FROM))
     print('added daily clean up task')
 
-async def delete_message(channel, messages_to_delete, now):
+async def delete_message(channel, messages_to_delete, now, client):
     # more than 100
     if len(messages_to_delete) > 100:
         for messages in chunk(messages_to_delete, 100):
@@ -37,11 +37,15 @@ async def delete_message(channel, messages_to_delete, now):
             await message.delete()
         else:
             bulk.append(message)
+    # user = channel.guild.get_member(client.user.id)
+    # temp = channel.permissions_for(user)
+    # print(temp.manage_messages)
+    # print(client.user.display_name)
 
     await channel.delete_messages(bulk)
 
 
-async def delete_messages(channel):
+async def delete_messages(channel, client):
     if isinstance(channel, discord.TextChannel):
         now = discord.utils.utcnow()
         delta = datetime.timedelta(days=7)
@@ -53,7 +57,7 @@ async def delete_messages(channel):
                 continue
             if message.created_at < jeff:
                 messages_to_delete.append(message)
-        # await delete_message(channel, messages_to_delete, now)
+        await delete_message(channel, messages_to_delete, now, client)
         for message in messages_to_delete:
             print(message.content)
 
@@ -63,7 +67,7 @@ async def delete_old_messages_from_channels(client, channels):
 
         print(discord_channel.name)
 
-        await delete_messages(discord_channel)
+        await delete_messages(discord_channel,client)
 
 class MyCog(commands.Cog):
     def __init__(self, bot, channels):
