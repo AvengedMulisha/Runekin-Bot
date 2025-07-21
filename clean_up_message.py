@@ -6,7 +6,7 @@ from discord.ext import commands, tasks
 utc = datetime.timezone.utc
 
 # If no tzinfo is given then UTC is assumed.
-time = datetime.time(hour=2, minute=0, tzinfo=utc)
+time = datetime.time(hour=1, minute=0, tzinfo=utc)
 
 CHANNELS_TO_DELETE_FROM = [
     #planned-events
