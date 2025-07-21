@@ -16,13 +16,6 @@ CHANNELS_TO_DELETE_FROM = [
 
 ]
 
-intents = discord.Intents.default()
-intents.members = True
-intents.message_content = True
-intents.guilds = True
-
-bot = commands.Bot(command_prefix='!', intents=intents)
-
 async def setup(bot):
     await bot.add_cog(MyCog(bot, CHANNELS_TO_DELETE_FROM))
     print('added daily clean up task')
