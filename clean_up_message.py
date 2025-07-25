@@ -82,13 +82,16 @@ class ApprovalView(discord.ui.View):
             await approved_channel.send(
                 f"**Submitted by {self.author.mention}:**\n{self.message_content}"
             )
-            await interaction.response.send_message("✅ Approved and posted.", ephemeral=True)
+        await interaction.message.delete()  # ✅ Delete the approval message with buttons
+        await interaction.response.send_message("✅ Approved and posted.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.red)
     async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.message.delete()  # ❌ Delete the approval message with buttons
         await interaction.response.send_message("❌ Rejected.", ephemeral=True)
         self.stop()
+
 
 # ========== APPROVAL COG ==========
 
