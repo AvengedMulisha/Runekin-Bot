@@ -9,7 +9,9 @@ cleanup_time = datetime.time(hour=0, minute=0, tzinfo=utc)
 
 CHANNELS_TO_DELETE_FROM = [
     1383717273704857670,  # planned-events
-    1385130581599457413   # event-polls-and-payments
+    1385130581599457413,   # event-polls-and-payments
+    1347682931111493734, # welcome
+    
 ]
 
 SUBMISSION_CHANNEL_ID = 1395474287531397283
