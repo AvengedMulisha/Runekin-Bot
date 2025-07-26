@@ -30,4 +30,9 @@ async def main():
         await client.start(os.getenv("DISCORD_TOKEN"))
 
 # Run the bot
-asyncio.run(main())
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("Bot shut down manually.")
+
