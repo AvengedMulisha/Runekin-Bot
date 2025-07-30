@@ -257,7 +257,7 @@ class PointsCog(commands.Cog):
 
         await interaction.response.send_message(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
 
-@app_commands.command(name="mypoints", description="Check your rank and points.")
+    @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
                 # Try linked RSN first
         linked_rsn = None
@@ -334,3 +334,4 @@ async def setup(bot):
     await bot.add_cog(ApprovalCog(bot))
     await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
+
