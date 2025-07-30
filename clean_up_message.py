@@ -142,31 +142,6 @@ class ApprovalCog(commands.Cog):
 
             await message.delete()
 
-# ========== APPROVAL COG ==========
-class ApprovalCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return
-
-        if message.channel.id == SUBMISSION_CHANNEL_ID:
-            approval_channel = self.bot.get_channel(APPROVAL_CHANNEL_ID)
-            if approval_channel:
-                embed = discord.Embed(
-                    title="New Submission",
-                    description=message.content,
-                    color=discord.Color.blue()
-                )
-                embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
-
-                view = ApprovalView(message.content, message.author)
-                await approval_channel.send(embed=embed, view=view)
-
-            await message.delete()
-
 
 # ========== POINTS COG ==========
 class PointsCog(commands.GroupCog):
@@ -284,14 +259,14 @@ class PointsCog(commands.GroupCog):
     async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
         await interaction.response.defer(ephemeral=True)
         if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ This command can only be used in the designated points channel.",
                 ephemeral=True
             )
             return
 
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
+            await interaction.followup.send("❌ You don't have permission to use this command.", ephemeral=True)
             return
 
         self.data.setdefault(player, {"points": 0, "approved": True, "rank": "Mind"})
