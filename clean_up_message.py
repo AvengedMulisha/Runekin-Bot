@@ -247,8 +247,7 @@ class PointsCog(commands.GroupCog):
         print("🕒 Running scheduled WOM sync...")
         self.sync_from_wise_old_man()
 
-    
-    @app_commands.command(name="mypoints", description="Check your points and rank.")
+@app_commands.command(name="mypoints", description="Check your points and rank.")
     async def mypoints(self, interaction: discord.Interaction):
         rsn = interaction.user.display_name
         player = self.data.get(rsn)
