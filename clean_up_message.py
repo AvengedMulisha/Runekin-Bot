@@ -270,7 +270,7 @@ class PointsCog(commands.GroupCog):
 
         rsn = links.get(str(interaction.user.id))
         if rsn:
-            await interaction.response.send_message(f"🔗 Your linked RSN is: **{rsn}**", ephemeral=True)
+            await interaction.followup.send(f"🔗 Your linked RSN is: **{rsn}**", ephemeral=True)
         else:
             await interaction.response.send_message("⚠️ You have not linked an RSN yet.", ephemeral=True)
 
