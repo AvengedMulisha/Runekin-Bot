@@ -108,7 +108,7 @@ class ApprovalView(discord.ui.View):
         if approved_channel:
             await approved_channel.send(f"**Submitted by {self.author.mention}:**\n{self.message_content}")
         await interaction.message.delete()
-        await interaction.response.send_message("✅ Approved and posted.", ephemeral=True)
+        await interaction.followup.send("✅ Approved and posted.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.red)
