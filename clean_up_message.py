@@ -194,11 +194,16 @@ class PointsCog(commands.Cog):
 
             self.save_data()
 
-            print(f"✅ Sync complete. Total members: {len(current_members)}")
-            if added:
+
+            if added or removed:
+                print(f"✅ Sync complete. Total members: {len(current_members)}")
+                if added:
                 print(f"➕ Added: {', '.join(added)}")
-            if removed:
-                print(f"➖ Removed: {', '.join(removed)}")
+                if removed:
+                    print(f"➖ Removed: {', '.join(removed)}")
+            else:
+                print("✅ Sync complete. No changes detected.")
+
 
             # Log to Discord
             added_channel = self.bot.get_channel(NEW_PLAYERS_CHANNEL_ID)
