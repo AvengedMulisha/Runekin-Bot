@@ -1,7 +1,12 @@
 import discord
 import itertools
 import datetime
+import os
+import json
+import requests
+import asyncio
 from discord.ext import commands, tasks
+from discord import app_commands
 
 # ========== CONFIG ==========
 utc = datetime.timezone.utc
@@ -9,17 +14,27 @@ cleanup_time = datetime.time(hour=0, minute=0, tzinfo=utc)
 
 CHANNELS_TO_DELETE_FROM = [
     1383717273704857670,  # planned-events
-    1385130581599457413,   # event-polls-and-payments
-    1347682931111493734, # welcome
-    
+    1385130581599457413,  # event-polls-and-payments
+    1347682931111493734,  # welcome
 ]
 
 SUBMISSION_CHANNEL_ID = 1395474287531397283
 APPROVAL_CHANNEL_ID = 1398377286436257872
 APPROVED_POSTS_CHANNEL_ID = 1395474287531397283
 
-# ========== CLEANUP COG ==========
+NEW_PLAYERS_CHANNEL_ID = 1347682931111493734
+REMOVED_PLAYERS_CHANNEL_ID = 1383716927113003078
 
+POINTS_FILE = "points.json"
+WOM_GROUP_ID = 12559
+
+RANK_THRESHOLDS = {
+    "Mind": 2, "Water": 5, "Earth": 10, "Fire": 20, "Cosmic": 30, "Chaos": 50,
+    "Astral": 75, "Nature": 100, "Law": 125, "Death": 150, "Blood": 200,
+    "Soul": 250, "Wrath": 300
+}
+
+# ========== CLEANUP COG ==========
 class CleanupCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -70,10 +85,9 @@ def chunk(items, size):
     return [list(itertools.islice(iterator, size)) for _ in range((len(items) + size - 1) // size)]
 
 # ========== APPROVAL VIEW ==========
-
 class ApprovalView(discord.ui.View):
     def __init__(self, message_content, author):
-        super().__init__(timeout=None)  # Buttons will expire after 5 minutes
+        super().__init__(timeout=None)
         self.message_content = message_content
         self.author = author
 
@@ -81,22 +95,18 @@ class ApprovalView(discord.ui.View):
     async def approve_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         approved_channel = interaction.client.get_channel(APPROVED_POSTS_CHANNEL_ID)
         if approved_channel:
-            await approved_channel.send(
-                f"**Submitted by {self.author.mention}:**\n{self.message_content}"
-            )
-        await interaction.message.delete()  # ✅ Delete the approval message with buttons
+            await approved_channel.send(f"**Submitted by {self.author.mention}:**\n{self.message_content}")
+        await interaction.message.delete()
         await interaction.response.send_message("✅ Approved and posted.", ephemeral=True)
         self.stop()
 
     @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.red)
     async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.message.delete()  # ❌ Delete the approval message with buttons
+        await interaction.message.delete()
         await interaction.response.send_message("❌ Rejected.", ephemeral=True)
         self.stop()
 
-
 # ========== APPROVAL COG ==========
-
 class ApprovalCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -121,9 +131,155 @@ class ApprovalCog(commands.Cog):
 
             await message.delete()
 
-# ========== EXTENSION ENTRY POINT ==========
+# ========== POINTS COG ==========
+class PointsCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.data = self.load_data()
+        self.sync_loop.start()
 
+    def cog_unload(self):
+        self.sync_loop.cancel()
+
+    def load_data(self):
+        if os.path.exists(POINTS_FILE):
+            with open(POINTS_FILE, "r") as f:
+                return json.load(f)
+        return {}
+
+    def save_data(self):
+        with open(POINTS_FILE, "w") as f:
+            json.dump(self.data, f, indent=2)
+
+    def get_rank(self, points):
+        last_rank = "Unranked"
+        for rank, threshold in RANK_THRESHOLDS.items():
+            if points >= threshold:
+                last_rank = rank
+            else:
+                break
+        return last_rank
+
+    def sync_from_wise_old_man(self):
+        try:
+            print("🔄 Syncing from Wise Old Man...")
+            response = requests.get(f"https://api.wiseoldman.net/v2/groups/{WOM_GROUP_ID}")
+            response.raise_for_status()
+            data = response.json()
+
+            if "memberships" not in data:
+                print("⚠️ No memberships found in WOM response.")
+                return
+
+            existing_members = set(self.data.keys())
+            current_members = set()
+            added = []
+            removed = []
+
+            for membership in data["memberships"]:
+                rsn = membership["player"]["displayName"]
+                current_members.add(rsn)
+
+                if rsn not in self.data:
+                    self.data[rsn] = {
+                        "points": 0,
+                        "approved": False,
+                        "rank": "Mind"
+                    }
+                    added.append(rsn)
+
+            removed = list(existing_members - current_members)
+            for old_member in removed:
+                del self.data[old_member]
+
+            self.save_data()
+
+            print(f"✅ Sync complete. Total members: {len(current_members)}")
+            if added:
+                print(f"➕ Added: {', '.join(added)}")
+            if removed:
+                print(f"➖ Removed: {', '.join(removed)}")
+
+            # Log to Discord
+            added_channel = self.bot.get_channel(NEW_PLAYERS_CHANNEL_ID)
+            if added and added_channel:
+                message = "**➕ New Players Added:**\n" + "\n".join(f"- {name}" for name in added)
+                asyncio.create_task(added_channel.send(message))
+
+            removed_channel = self.bot.get_channel(REMOVED_PLAYERS_CHANNEL_ID)
+            if removed and removed_channel:
+                message = "**➖ Players Removed:**\n" + "\n".join(f"- {name}" for name in removed)
+                asyncio.create_task(removed_channel.send(message))
+
+        except Exception as e:
+            print(f"❌ Error during Wise Old Man sync: {e}")
+
+    @tasks.loop(time=[datetime.time(minute=0, tzinfo=datetime.timezone.utc)])
+    async def sync_loop(self):
+        print("🕒 Running scheduled WOM sync...")
+        self.sync_from_wise_old_man()
+
+    @app_commands.command(name="mypoints", description="Check your rank and points.")
+    async def mypoints(self, interaction: discord.Interaction):
+        rsn = interaction.user.display_name
+        player = self.data.get(rsn)
+
+        if not player:
+            await interaction.response.send_message("❌ You don't have any points recorded.", ephemeral=True)
+            return
+
+        points = player["points"]
+        rank = self.get_rank(points)
+        await interaction.response.send_message(f"🧾 **{rsn}**: {points} points — Rank: **{rank}**", ephemeral=True)
+
+    @app_commands.command(name="addpoints", description="Add points to a player (admin only)")
+    @app_commands.describe(player="Enter the RSN of the player", amount="Points to add")
+    async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
+            return
+
+        self.data.setdefault(player, {"points": 0, "approved": True, "rank": "Mind"})
+        self.data[player]["points"] += amount
+        self.data[player]["rank"] = self.get_rank(self.data[player]["points"])
+        self.save_data()
+
+        await interaction.response.send_message(f"✅ Added {amount} points to **{player}**. New total: {self.data[player]['points']}.")
+
+    @app_commands.command(name="leaderboard", description="Show the top players by points.")
+    async def leaderboard(self, interaction: discord.Interaction):
+        sorted_players = sorted(self.data.items(), key=lambda x: x[1]["points"], reverse=True)
+        top_10 = sorted_players[:10]
+
+        if not top_10:
+            await interaction.response.send_message("No leaderboard data yet.")
+            return
+
+        lines = [f"🏅 **{name}** — {info['points']} pts ({info['rank']})" for name, info in top_10]
+        leaderboard_text = "\n".join(lines)
+        await interaction.response.send_message(f"📊 **Top Players**:\n{leaderboard_text}")
+
+    @app_commands.command(name="syncpoints", description="Sync members from Wise Old Man group.")
+    async def syncpoints(self, interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ You don't have permission to sync points.", ephemeral=True)
+            return
+
+        self.sync_from_wise_old_man()
+        await interaction.response.send_message("🔄 Sync complete!", ephemeral=True)
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        try:
+            synced = await self.bot.tree.sync()
+            print(f"🔃 Synced {len(synced)} slash commands.")
+            self.sync_from_wise_old_man()
+        except Exception as e:
+            print(f"❌ Error syncing slash commands: {e}")
+
+# ========== EXTENSION ENTRY POINT ==========
 async def setup(bot):
     await bot.add_cog(CleanupCog(bot))
     await bot.add_cog(ApprovalCog(bot))
+    await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
