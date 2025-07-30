@@ -233,85 +233,13 @@ class PointsCog(commands.GroupCog):
         print("🕒 Running scheduled WOM sync...")
         self.sync_from_wise_old_man()
 
-    @app_commands.command(name="linkrsn", description="Link your RuneScape name and update your server nickname")
-    @app_commands.describe(rsn="Your in-game RuneScape name")
-    async def linkrsn(self, interaction: discord.Interaction, rsn: str):
-        await interaction.response.defer(ephemeral=True)
-        print(f"🔗 Linking RSN for {interaction.user} to {rsn}")
-        if not os.path.exists("linked_rsn.json"):
-            links = {}
-        else:
-            with open("linked_rsn.json", "r") as f:
-                links = json.load(f)
-
-        links[str(interaction.user.id)] = rsn
-
-        with open("linked_rsn.json", "w") as f:
-            json.dump(links, f, indent=2)
-
-        try:
-            if isinstance(interaction.channel, discord.TextChannel):
-                await interaction.user.edit(nick=rsn)
-        except discord.Forbidden:
-            await interaction.followup.send("✅ RSN linked, but I don't have permission to change your nickname.", ephemeral=True)
-            return
-
-        await interaction.followup.send(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
-
-    @app_commands.command(name="myrsn", description="Check the RSN linked to your account")
-    async def myrsn(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
-        if not os.path.exists("linked_rsn.json"):
-            await interaction.followup.send("⚠️ No RSN links found.", ephemeral=True)
-            return
-
-        with open("linked_rsn.json", "r") as f:
-            links = json.load(f)
-
-        rsn = links.get(str(interaction.user.id))
-        if rsn:
-            await interaction.followup.send(f"🔗 Your linked RSN is: **{rsn}**", ephemeral=True)
-        else:
-            await interaction.followup.send("⚠️ You have not linked an RSN yet.", ephemeral=True)
-
-    @app_commands.command(name="setrsnfor", description="Admin command to set or change another user's RSN")
-    @app_commands.describe(member="The user to link", rsn="The RuneScape name to assign")
-    async def setrsnfor(self, interaction: discord.Interaction, member: discord.Member, rsn: str):
-        await interaction.response.defer(ephemeral=True)
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You do not have permission to do that.", ephemeral=True)
-            return
-
-        if not os.path.exists("linked_rsn.json"):
-            links = {}
-        else:
-            with open("linked_rsn.json", "r") as f:
-                links = json.load(f)
-
-        links[str(member.id)] = rsn
-
-        with open("linked_rsn.json", "w") as f:
-            json.dump(links, f, indent=2)
-
-        try:
-            await member.edit(nick=rsn)
-        except discord.Forbidden:
-            await interaction.response.send_message(f"✅ Set RSN for {member.mention} to **{rsn}**, but couldn't update nickname.", ephemeral=True)
-            return
-
-        await interaction.response.send_message(f"✅ Set RSN for {member.mention} to **{rsn}** and updated their nickname.", ephemeral=True)
+    
 
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
                 # Try linked RSN first
-        linked_rsn = None
-        if os.path.exists("linked_rsn.json"):
-            with open("linked_rsn.json", "r") as f:
-                links = json.load(f)
-                linked_rsn = links.get(str(interaction.user.id))
-
-        rsn = linked_rsn if linked_rsn else interaction.user.display_name
+        rsn = interaction.user.display_name
         player = self.data.get(rsn)
 
         if not player:
@@ -380,4 +308,3 @@ async def setup(bot):
     await bot.add_cog(ApprovalCog(bot))
     await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
-
