@@ -241,8 +241,7 @@ class PointsCog(commands.GroupCog):
 
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)
-                # Try linked RSN first
+                        # Try linked RSN first
         rsn = interaction.user.display_name
         player = self.data.get(rsn)
 
@@ -312,3 +311,4 @@ async def setup(bot):
     await bot.add_cog(ApprovalCog(bot))
     await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
+
