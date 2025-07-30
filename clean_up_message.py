@@ -232,9 +232,41 @@ class PointsCog(commands.Cog):
         print("🕒 Running scheduled WOM sync...")
         self.sync_from_wise_old_man()
 
-    @app_commands.command(name="mypoints", description="Check your rank and points.")
+    @app_commands.command(name="linkrsn", description="Link your RuneScape name and update your server nickname")
+    @app_commands.describe(rsn="Your in-game RuneScape name")
+    async def linkrsn(self, interaction: discord.Interaction, rsn: str):
+        # Save RSN link
+        if not os.path.exists("linked_rsn.json"):
+            links = {}
+        else:
+            with open("linked_rsn.json", "r") as f:
+                links = json.load(f)
+
+        links[str(interaction.user.id)] = rsn
+
+        with open("linked_rsn.json", "w") as f:
+            json.dump(links, f, indent=2)
+
+        # Attempt to update nickname
+        try:
+            if isinstance(interaction.channel, discord.TextChannel):
+                await interaction.user.edit(nick=rsn)
+        except discord.Forbidden:
+            await interaction.response.send_message("✅ RSN linked, but I don't have permission to change your nickname.", ephemeral=True)
+            return
+
+        await interaction.response.send_message(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
+
+@app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
-        rsn = interaction.user.display_name
+                # Try linked RSN first
+        linked_rsn = None
+        if os.path.exists("linked_rsn.json"):
+            with open("linked_rsn.json", "r") as f:
+                links = json.load(f)
+                linked_rsn = links.get(str(interaction.user.id))
+
+        rsn = linked_rsn if linked_rsn else interaction.user.display_name
         player = self.data.get(rsn)
 
         if not player:
