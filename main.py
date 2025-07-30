@@ -25,7 +25,7 @@ async def main():
     async with client:
         # Load all your cogs here
         await client.load_extension("clean_up_message")  # Your cleanup + approval cog
-        await client.load_extension("points_cog")        # Your new points system cog
+       # await client.load_extension("points_cog")        # Your new points system cog
         await client.start(os.getenv("DISCORD_TOKEN"))
 
 # Run the bot
