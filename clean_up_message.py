@@ -247,53 +247,6 @@ class PointsCog(commands.GroupCog):
         print("🕒 Running scheduled WOM sync...")
         self.sync_from_wise_old_man()
 
-@app_commands.command(name="mypoints", description="Check your points and rank.")
-    async def mypoints(self, interaction: discord.Interaction):
-        rsn = interaction.user.display_name
-        player = self.data.get(rsn)
-
-        if not player:
-            await interaction.response.send_message("❌ You don't have any points recorded.", ephemeral=True)
-            return
-
-        points = player["points"]
-        rank = self.get_rank(points)
-        await interaction.response.send_message(f"🧾 **{rsn}**: {points} points — Rank: **{rank}**", ephemeral=True)
-
-
-    @app_commands.command(name="leaderboard", description="Show the top 10 ranked players.")
-    async def leaderboard(self, interaction: discord.Interaction):
-        sorted_players = sorted(self.data.items(), key=lambda x: x[1]["points"], reverse=True)[:10]
-
-        if not sorted_players:
-            await interaction.response.send_message("⚠️ No players found.", ephemeral=True)
-            return
-
-        lines = [f"🏅 **{name}** — {info['points']} pts ({info['rank']})" for name, info in sorted_players]
-        leaderboard_text = "
-".join(lines)
-        await interaction.response.send_message(f"📊 **Top Players**:
-{leaderboard_text}", ephemeral=True)
-
-
-    @app_commands.command(name="syncpoints", description="Admin-only: Sync from Wise Old Man.")
-    async def syncpoints(self, interaction: discord.Interaction):
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You don't have permission to do this.", ephemeral=True)
-            return
-
-        self.sync_from_wise_old_man()
-        await interaction.response.send_message("🔄 Sync complete.", ephemeral=True)
-
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        try:
-            synced = await self.bot.tree.sync(guild=discord.Object(id=1347682930465706004))
-            print(f"🔃 Synced {len(synced)} slash commands.")
-        except Exception as e:
-            print(f"❌ Error syncing slash commands: {e}")
-
 # ========== EXTENSION ENTRY POINT ==========
 async def setup(bot):
     await bot.add_cog(CleanupCog(bot))
