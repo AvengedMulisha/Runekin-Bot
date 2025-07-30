@@ -15,6 +15,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = commands.Bot(command_prefix='!', intents=intents)
+client.tree.copy_global_to(guild=discord.Object(id=1347682930465706004))
+
 
 @client.event
 async def on_ready():
