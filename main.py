@@ -21,9 +21,17 @@ client.tree.copy_global_to(guild=discord.Object(id=GUILD_ID))  # Force slash com
 
 @client.event
 async def on_ready():
-    await client.tree.sync(guild=discord.Object(id=GUILD_ID))
+    guild = discord.Object(id=GUILD_ID)
+
+    # Clear any previously registered commands in the guild (old leftovers)
+    client.tree.clear_commands(guild=guild)
+
+    # Resync with only the new ones
+    await client.tree.sync(guild=guild)
+
     print(f"✅ Logged in as {client.user}")
-    print("✅ Slash commands synced to guild")
+    print("✅ Slash commands cleared and re-synced for guild")
+
 
 async def main():
     keep_alive()  # Optional: if using a web server to keep bot alive
