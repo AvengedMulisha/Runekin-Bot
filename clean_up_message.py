@@ -146,6 +146,10 @@ class ApprovalCog(commands.Cog):
 class PointsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        # Register slash commands
+        self.bot.tree.add_command(self.linkrsn)
+        self.bot.tree.add_command(self.myrsn)
+        self.bot.tree.add_command(self.setrsnfor)
         self.data = self.load_data()
         self.sync_loop.start()
 
@@ -236,7 +240,6 @@ class PointsCog(commands.Cog):
     @app_commands.describe(rsn="Your in-game RuneScape name")
     async def linkrsn(self, interaction: discord.Interaction, rsn: str):
         print(f"🔗 Linking RSN for {interaction.user} to {rsn}")
-        # Save RSN link
         if not os.path.exists("linked_rsn.json"):
             links = {}
         else:
@@ -248,7 +251,6 @@ class PointsCog(commands.Cog):
         with open("linked_rsn.json", "w") as f:
             json.dump(links, f, indent=2)
 
-        # Attempt to update nickname
         try:
             if isinstance(interaction.channel, discord.TextChannel):
                 await interaction.user.edit(nick=rsn)
@@ -257,6 +259,47 @@ class PointsCog(commands.Cog):
             return
 
         await interaction.response.send_message(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
+
+    @app_commands.command(name="myrsn", description="Check the RSN linked to your account")
+    async def myrsn(self, interaction: discord.Interaction):
+        if not os.path.exists("linked_rsn.json"):
+            await interaction.response.send_message("⚠️ No RSN links found.", ephemeral=True)
+            return
+
+        with open("linked_rsn.json", "r") as f:
+            links = json.load(f)
+
+        rsn = links.get(str(interaction.user.id))
+        if rsn:
+            await interaction.response.send_message(f"🔗 Your linked RSN is: **{rsn}**", ephemeral=True)
+        else:
+            await interaction.response.send_message("⚠️ You have not linked an RSN yet.", ephemeral=True)
+
+    @app_commands.command(name="setrsnfor", description="Admin command to set or change another user's RSN")
+    @app_commands.describe(member="The user to link", rsn="The RuneScape name to assign")
+    async def setrsnfor(self, interaction: discord.Interaction, member: discord.Member, rsn: str):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ You do not have permission to do that.", ephemeral=True)
+            return
+
+        if not os.path.exists("linked_rsn.json"):
+            links = {}
+        else:
+            with open("linked_rsn.json", "r") as f:
+                links = json.load(f)
+
+        links[str(member.id)] = rsn
+
+        with open("linked_rsn.json", "w") as f:
+            json.dump(links, f, indent=2)
+
+        try:
+            await member.edit(nick=rsn)
+        except discord.Forbidden:
+            await interaction.response.send_message(f"✅ Set RSN for {member.mention} to **{rsn}**, but couldn't update nickname.", ephemeral=True)
+            return
+
+        await interaction.response.send_message(f"✅ Set RSN for {member.mention} to **{rsn}** and updated their nickname.", ephemeral=True)
 
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
