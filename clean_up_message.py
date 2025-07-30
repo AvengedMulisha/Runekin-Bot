@@ -198,7 +198,7 @@ class PointsCog(commands.Cog):
             if added or removed:
                 print(f"✅ Sync complete. Total members: {len(current_members)}")
                 if added:
-                print(f"➕ Added: {', '.join(added)}")
+                    print(f"➕ Added: {', '.join(added)}")
                 if removed:
                     print(f"➖ Removed: {', '.join(removed)}")
             else:
