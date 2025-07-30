@@ -272,7 +272,7 @@ class PointsCog(commands.GroupCog):
         if rsn:
             await interaction.followup.send(f"🔗 Your linked RSN is: **{rsn}**", ephemeral=True)
         else:
-            await interaction.response.send_message("⚠️ You have not linked an RSN yet.", ephemeral=True)
+            await interaction.followup.send("⚠️ You have not linked an RSN yet.", ephemeral=True)
 
     @app_commands.command(name="setrsnfor", description="Admin command to set or change another user's RSN")
     @app_commands.describe(member="The user to link", rsn="The RuneScape name to assign")
