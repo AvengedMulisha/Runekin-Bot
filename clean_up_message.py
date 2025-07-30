@@ -253,7 +253,7 @@ class PointsCog(commands.GroupCog):
             if isinstance(interaction.channel, discord.TextChannel):
                 await interaction.user.edit(nick=rsn)
         except discord.Forbidden:
-            await interaction.response.send_message("✅ RSN linked, but I don't have permission to change your nickname.", ephemeral=True)
+            await interaction.followup.send("✅ RSN linked, but I don't have permission to change your nickname.", ephemeral=True)
             return
 
         await interaction.response.send_message(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
