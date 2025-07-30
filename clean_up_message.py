@@ -160,9 +160,12 @@ from discord import app_commands
 class PointsCog(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
-
         self.data = self.load_data()
         self.sync_loop.start()
+
+        # Register slash command to guild
+        self.bot.tree.add_command(self.addpoints, guild=discord.Object(id=1347682930465706004))
+        self.bot.tree.add_command(self.syncwom, guild=discord.Object(id=1347682930465706004))
 
     def cog_unload(self):
         self.sync_loop.cancel()
@@ -246,6 +249,41 @@ class PointsCog(commands.GroupCog):
     async def sync_loop(self):
         print("🕒 Running scheduled WOM sync...")
         self.sync_from_wise_old_man()
+
+    @app_commands.command(name="addpoints", description="Add points to a player.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def addpoints(self, interaction: discord.Interaction, rsn: str, points: int):
+        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
+            await interaction.response.send_message("❌ This command can only be used in the designated channel.", ephemeral=True)
+            return
+
+        if rsn not in self.data:
+            self.data[rsn] = {
+                "points": 0,
+                "approved": False,
+                "rank": "Mind"
+            }
+
+        self.data[rsn]["points"] += points
+        self.data[rsn]["rank"] = self.get_rank(self.data[rsn]["points"])
+        self.save_data()
+
+        await interaction.response.send_message(
+            f"✅ Added **{points}** points to **{rsn}**.\n"
+            f"Total: **{self.data[rsn]['points']}** ({self.data[rsn]['rank']})",
+            ephemeral=True
+        )
+
+    @app_commands.command(name="syncwom", description="Force sync from Wise Old Man.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def syncwom(self, interaction: discord.Interaction):
+        await interaction.response.send_message("🔄 Syncing from Wise Old Man...", ephemeral=True)
+        try:
+            await asyncio.to_thread(self.sync_from_wise_old_man)
+            await interaction.followup.send("✅ Manual sync complete.", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Sync failed: {e}", ephemeral=True)
+
 
 # ========== EXTENSION ENTRY POINT ==========
 async def setup(bot):
