@@ -24,6 +24,7 @@ APPROVED_POSTS_CHANNEL_ID = 1395474287531397283
 
 NEW_PLAYERS_CHANNEL_ID = 1347682931111493734
 REMOVED_PLAYERS_CHANNEL_ID = 1383716927113003078
+ADDPOINTS_CHANNEL_ID = 1384493244464894042  # Only allow /addpoints here
 
 POINTS_FILE = "points.json"
 WOM_GROUP_ID = 12559
@@ -194,7 +195,6 @@ class PointsCog(commands.Cog):
 
             self.save_data()
 
-
             if added or removed:
                 print(f"✅ Sync complete. Total members: {len(current_members)}")
                 if added:
@@ -204,8 +204,6 @@ class PointsCog(commands.Cog):
             else:
                 print("✅ Sync complete. No changes detected.")
 
-
-            # Log to Discord
             added_channel = self.bot.get_channel(NEW_PLAYERS_CHANNEL_ID)
             if added and added_channel:
                 message = "**➕ New Players Added:**\n" + "\n".join(f"- {name}" for name in added)
@@ -240,6 +238,13 @@ class PointsCog(commands.Cog):
     @app_commands.command(name="addpoints", description="Add points to a player (admin only)")
     @app_commands.describe(player="Enter the RSN of the player", amount="Points to add")
     async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
+        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
+            await interaction.response.send_message(
+                "❌ This command can only be used in the designated points channel.",
+                ephemeral=True
+            )
+            return
+
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
             return
@@ -278,7 +283,6 @@ class PointsCog(commands.Cog):
         try:
             synced = await self.bot.tree.sync()
             print(f"🔃 Synced {len(synced)} slash commands.")
-            self.sync_from_wise_old_man()
         except Exception as e:
             print(f"❌ Error syncing slash commands: {e}")
 
@@ -288,3 +292,4 @@ async def setup(bot):
     await bot.add_cog(ApprovalCog(bot))
     await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
+
