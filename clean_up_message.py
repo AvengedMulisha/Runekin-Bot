@@ -118,35 +118,9 @@ class ApprovalView(discord.ui.View):
         self.stop()
 
 # ========== APPROVAL COG ==========
-class ApprovalCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return
-
-        if message.channel.id == SUBMISSION_CHANNEL_ID:
-            approval_channel = self.bot.get_channel(APPROVAL_CHANNEL_ID)
-            if approval_channel:
-                embed = discord.Embed(
-                    title="New Submission",
-                    description=message.content,
-                    color=discord.Color.blue()
-                )
-                embed.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
-
-                view = ApprovalView(message.content, message.author)
-                await approval_channel.send(embed=embed, view=view)
-
-            await message.delete()
-
-# ========== POINTS COG ==========
 class PointsCog(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
-
         self.data = self.load_data()
         self.sync_loop.start()
 
@@ -233,15 +207,9 @@ class PointsCog(commands.GroupCog):
         print("🕒 Running scheduled WOM sync...")
         self.sync_from_wise_old_man()
 
-    
-
-    
-
-    
-
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
-                        # Try linked RSN first
+        await interaction.response.defer(ephemeral=True)
         rsn = interaction.user.display_name
         player = self.data.get(rsn)
 
@@ -251,21 +219,19 @@ class PointsCog(commands.GroupCog):
 
         points = player["points"]
         rank = self.get_rank(points)
-        await interaction.response.send_message(f"🧾 **{rsn}**: {points} points — Rank: **{rank}**", ephemeral=True)
+        await interaction.followup.send(f"🧾 **{rsn}**: {points} points — Rank: **{rank}**", ephemeral=True)
 
     @app_commands.command(name="addpoints", description="Add points to a player (admin only)")
     @app_commands.describe(player="Enter the RSN of the player", amount="Points to add")
     async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
         await interaction.response.defer(ephemeral=True)
+
         if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.response.send_message(
-                "❌ This command can only be used in the designated points channel.",
-                ephemeral=True
-            )
+            await interaction.followup.send("❌ This command can only be used in the designated points channel.", ephemeral=True)
             return
 
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
+            await interaction.followup.send("❌ You don't have permission to use this command.", ephemeral=True)
             return
 
         self.data.setdefault(player, {"points": 0, "approved": True, "rank": "Mind"})
@@ -273,29 +239,33 @@ class PointsCog(commands.GroupCog):
         self.data[player]["rank"] = self.get_rank(self.data[player]["points"])
         self.save_data()
 
-        await interaction.response.send_message(f"✅ Added {amount} points to **{player}**. New total: {self.data[player]['points']}.")
+        await interaction.followup.send(f"✅ Added {amount} points to **{player}**. New total: {self.data[player]['points']}.", ephemeral=True)
 
     @app_commands.command(name="leaderboard", description="Show the top players by points.")
     async def leaderboard(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
         sorted_players = sorted(self.data.items(), key=lambda x: x[1]["points"], reverse=True)
         top_10 = sorted_players[:10]
 
         if not top_10:
-            await interaction.response.send_message("No leaderboard data yet.")
+            await interaction.followup.send("No leaderboard data yet.", ephemeral=True)
             return
 
         lines = [f"🏅 **{name}** — {info['points']} pts ({info['rank']})" for name, info in top_10]
         leaderboard_text = "\n".join(lines)
-        await interaction.response.send_message(f"📊 **Top Players**:\n{leaderboard_text}")
+        await interaction.followup.send(f"📊 **Top Players**:\n{leaderboard_text}", ephemeral=True)
 
     @app_commands.command(name="syncpoints", description="Sync members from Wise Old Man group.")
     async def syncpoints(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You don't have permission to sync points.", ephemeral=True)
+            await interaction.followup.send("❌ You don't have permission to sync points.", ephemeral=True)
             return
 
         self.sync_from_wise_old_man()
-        await interaction.response.send_message("🔄 Sync complete!", ephemeral=True)
+        await interaction.followup.send("🔄 Sync complete!", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -304,11 +274,3 @@ class PointsCog(commands.GroupCog):
             print(f"🔃 Synced {len(synced)} slash commands.")
         except Exception as e:
             print(f"❌ Error syncing slash commands: {e}")
-
-# ========== EXTENSION ENTRY POINT ==========
-async def setup(bot):
-    await bot.add_cog(CleanupCog(bot))
-    await bot.add_cog(ApprovalCog(bot))
-    await bot.add_cog(PointsCog(bot))
-    print("✅ clean_up_message extension loaded.")
-
