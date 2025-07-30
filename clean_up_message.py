@@ -30,19 +30,30 @@ POINTS_FILE = "points.json"
 WOM_GROUP_ID = 12559
 
 RANK_THRESHOLDS = {
-    "Leader": 1000,
-    "Co-Leader": 999,
-    "Admin": 950,
-    "Mentor": 900,
-    "Teacher": 850,
-    "Zamorakian": 504,
-    "Zarosaian": 503,
-    "Saradominist": 502,
-    "Guthixian": 501,
+    "Air": 0,
+    "Mind": 2,
+    "Water": 5,
+    "Earth": 10,
+    "Fire": 20,
+    "Cosmic": 30,
+    "Chaos": 50,
+    "Astral": 75,
+    "Nature": 100,
+    "Law": 125,
+    "Death": 150,
+    "Blood": 200,
+    "Soul": 250,
+    "Wrath": 300,
     "Armadylean": 500,
-    "Mind": 2, "Water": 5, "Earth": 10, "Fire": 20, "Cosmic": 30, "Chaos": 50,
-    "Astral": 75, "Nature": 100, "Law": 125, "Death": 150, "Blood": 200,
-    "Soul": 250, "Wrath": 300
+    "Guthixian": 501,
+    "Saradominist": 502,
+    "Zarosaian": 503,
+    "Zamorakian": 504,
+    "Teacher": 850,
+    "Mentor": 900,
+    "Admin": 950,
+    "Co-Leader": 999,
+    "Leader": 1000
 }
 
 # ========== CLEANUP COG ==========
@@ -144,6 +155,8 @@ class ApprovalCog(commands.Cog):
 
 
 # ========== POINTS COG ==========
+from discord import app_commands
+
 class PointsCog(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
@@ -165,7 +178,7 @@ class PointsCog(commands.GroupCog):
             json.dump(self.data, f, indent=2)
 
     def get_rank(self, points):
-        last_rank = "Unranked"
+        last_rank = "Air"
         for rank, threshold in sorted(RANK_THRESHOLDS.items(), key=lambda x: x[1]):
             if points >= threshold:
                 last_rank = rank
@@ -235,67 +248,44 @@ class PointsCog(commands.GroupCog):
         self.sync_from_wise_old_man()
 
     
-
-    
-
-    
-
-    @app_commands.command(name="mypoints", description="Check your rank and points.")
+    @app_commands.command(name="mypoints", description="Check your points and rank.")
     async def mypoints(self, interaction: discord.Interaction):
-                        # Try linked RSN first
         rsn = interaction.user.display_name
         player = self.data.get(rsn)
 
         if not player:
-            await interaction.followup.send("❌ You don't have any points recorded.", ephemeral=True)
+            await interaction.response.send_message("❌ You don't have any points recorded.", ephemeral=True)
             return
 
         points = player["points"]
         rank = self.get_rank(points)
-        await interaction.followup.send(f"🧾 **{rsn}**: {points} points — Rank: **{rank}**", ephemeral=True)
+        await interaction.response.send_message(f"🧾 **{rsn}**: {points} points — Rank: **{rank}**", ephemeral=True)
 
-    @app_commands.command(name="addpoints", description="Add points to a player (admin only)")
-    @app_commands.describe(player="Enter the RSN of the player", amount="Points to add")
-    async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
-        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.followup.send(
-                "❌ This command can only be used in the designated points channel.",
-                ephemeral=True
-            )
-            return
 
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.followup.send("❌ You don't have permission to use this command.", ephemeral=True)
-            return
-
-        self.data.setdefault(player, {"points": 0, "approved": True, "rank": "Mind"})
-        self.data[player]["points"] += amount
-        self.data[player]["rank"] = self.get_rank(self.data[player]["points"])
-        self.save_data()
-
-        await interaction.response.send_message(f"✅ Added {amount} points to **{player}**. New total: {self.data[player]['points']}.")
-
-    @app_commands.command(name="leaderboard", description="Show the top players by points.")
+    @app_commands.command(name="leaderboard", description="Show the top 10 ranked players.")
     async def leaderboard(self, interaction: discord.Interaction):
-        sorted_players = sorted(self.data.items(), key=lambda x: x[1]["points"], reverse=True)
-        top_10 = sorted_players[:10]
+        sorted_players = sorted(self.data.items(), key=lambda x: x[1]["points"], reverse=True)[:10]
 
-        if not top_10:
-            await interaction.response.send_message("No leaderboard data yet.")
+        if not sorted_players:
+            await interaction.response.send_message("⚠️ No players found.", ephemeral=True)
             return
 
-        lines = [f"🏅 **{name}** — {info['points']} pts ({info['rank']})" for name, info in top_10]
-        leaderboard_text = "\n".join(lines)
-        await interaction.response.send_message(f"📊 **Top Players**:\n{leaderboard_text}")
+        lines = [f"🏅 **{name}** — {info['points']} pts ({info['rank']})" for name, info in sorted_players]
+        leaderboard_text = "
+".join(lines)
+        await interaction.response.send_message(f"📊 **Top Players**:
+{leaderboard_text}", ephemeral=True)
 
-    @app_commands.command(name="syncpoints", description="Sync members from Wise Old Man group.")
+
+    @app_commands.command(name="syncpoints", description="Admin-only: Sync from Wise Old Man.")
     async def syncpoints(self, interaction: discord.Interaction):
         if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message("❌ You don't have permission to sync points.", ephemeral=True)
+            await interaction.response.send_message("❌ You don't have permission to do this.", ephemeral=True)
             return
 
         self.sync_from_wise_old_man()
-        await interaction.response.send_message("🔄 Sync complete!", ephemeral=True)
+        await interaction.response.send_message("🔄 Sync complete.", ephemeral=True)
+
 
     @commands.Cog.listener()
     async def on_ready(self):
