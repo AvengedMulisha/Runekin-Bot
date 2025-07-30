@@ -256,7 +256,7 @@ class PointsCog(commands.GroupCog):
             await interaction.followup.send("✅ RSN linked, but I don't have permission to change your nickname.", ephemeral=True)
             return
 
-        await interaction.response.send_message(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
+        await interaction.followup.send(f"✅ RSN linked to **{rsn}** and nickname updated.", ephemeral=True)
 
     @app_commands.command(name="myrsn", description="Check the RSN linked to your account")
     async def myrsn(self, interaction: discord.Interaction):
