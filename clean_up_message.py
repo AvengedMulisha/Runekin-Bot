@@ -235,6 +235,10 @@ class PointsCog(commands.GroupCog):
 
     
 
+    
+
+    
+
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
@@ -243,7 +247,7 @@ class PointsCog(commands.GroupCog):
         player = self.data.get(rsn)
 
         if not player:
-            await interaction.response.send_message("❌ You don't have any points recorded.", ephemeral=True)
+            await interaction.followup.send("❌ You don't have any points recorded.", ephemeral=True)
             return
 
         points = player["points"]
