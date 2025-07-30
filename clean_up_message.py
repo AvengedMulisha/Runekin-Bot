@@ -160,7 +160,7 @@ class PointsCog(commands.Cog):
                 break
         return last_rank
 
-    def sync_from_wise_old_man(self):
+    #def sync_from_wise_old_man(self):
         try:
             print("🔄 Syncing from Wise Old Man...")
             response = requests.get(f"https://api.wiseoldman.net/v2/groups/{WOM_GROUP_ID}")
