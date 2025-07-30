@@ -262,7 +262,7 @@ class PointsCog(commands.GroupCog):
     async def myrsn(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         if not os.path.exists("linked_rsn.json"):
-            await interaction.response.send_message("⚠️ No RSN links found.", ephemeral=True)
+            await interaction.followup.send("⚠️ No RSN links found.", ephemeral=True)
             return
 
         with open("linked_rsn.json", "r") as f:
