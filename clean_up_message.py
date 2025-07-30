@@ -30,8 +30,8 @@ POINTS_FILE = "points.json"
 WOM_GROUP_ID = 12559
 
 RANK_THRESHOLDS = {
-    "Owner": 1000,
-    "Deputy Owner": 999,
+    "Leader": 1000,
+    "Co-Leader": 999,
     "Admin": 950,
     "Mentor": 900,
     "Teacher": 850,
@@ -164,7 +164,7 @@ class PointsCog(commands.Cog):
 
     def get_rank(self, points):
         last_rank = "Unranked"
-        for rank, threshold in RANK_THRESHOLDS.items():
+        for rank, threshold in sorted(RANK_THRESHOLDS.items(), key=lambda x: x[1]):
             if points >= threshold:
                 last_rank = rank
             else:
