@@ -143,7 +143,7 @@ class ApprovalCog(commands.Cog):
             await message.delete()
 
 # ========== POINTS COG ==========
-class PointsCog(commands.Cog):
+class PointsCog(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -369,7 +369,7 @@ class PointsCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         try:
-            synced = await self.bot.tree.sync()
+            synced = await self.bot.tree.sync(guild=discord.Object(id=1347682930465706004))
             print(f"🔃 Synced {len(synced)} slash commands.")
         except Exception as e:
             print(f"❌ Error syncing slash commands: {e}")
