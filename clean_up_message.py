@@ -30,6 +30,16 @@ POINTS_FILE = "points.json"
 WOM_GROUP_ID = 12559
 
 RANK_THRESHOLDS = {
+    "Owner": 1000,
+    "Deputy Owner": 999,
+    "Admin": 950,
+    "Mentor": 900,
+    "Teacher": 850,
+    "Zamorakian": 504,
+    "Zarosaian": 503,
+    "Saradominist": 502,
+    "Guthixian": 501,
+    "Armadylean": 500,
     "Mind": 2, "Water": 5, "Earth": 10, "Fire": 20, "Cosmic": 30, "Chaos": 50,
     "Astral": 75, "Nature": 100, "Law": 125, "Death": 150, "Blood": 200,
     "Soul": 250, "Wrath": 300
@@ -292,4 +302,3 @@ async def setup(bot):
     await bot.add_cog(ApprovalCog(bot))
     await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
-
