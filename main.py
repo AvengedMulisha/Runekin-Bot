@@ -10,12 +10,15 @@ from keep_alive import keep_alive  # Local import (your own module)
 # Load environment variables
 load_dotenv()
 
+#Guild ID for slash commands
+GUILD_ID = 1347682930465706004  # your server ID
+
 # Intents and bot setup
 intents = discord.Intents.default()
 intents.message_content = True
 
 client = commands.Bot(command_prefix='!', intents=intents)
-client.tree.copy_global_to(guild=discord.Object(id=1347682930465706004))
+client.tree.copy_global_to(guild=discord.Object(id=GUILD_ID))
 
 
 @client.event
