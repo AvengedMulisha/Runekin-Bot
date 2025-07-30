@@ -257,7 +257,6 @@ class PointsCog(commands.GroupCog):
     @app_commands.command(name="addpoints", description="Add points to a player (admin only)")
     @app_commands.describe(player="Enter the RSN of the player", amount="Points to add")
     async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
-        await interaction.response.defer(ephemeral=True)
         if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
             await interaction.followup.send(
                 "❌ This command can only be used in the designated points channel.",
