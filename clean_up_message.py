@@ -114,7 +114,7 @@ class ApprovalView(discord.ui.View):
     @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.red)
     async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.message.delete()
-        await interaction.response.send_message("❌ Rejected.", ephemeral=True)
+        await interaction.followup.send("❌ Rejected.", ephemeral=True)
         self.stop()
 
 # ========== APPROVAL COG ==========
