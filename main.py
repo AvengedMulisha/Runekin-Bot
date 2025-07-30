@@ -1,41 +1,38 @@
 import asyncio
 import os
-
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-
-from keep_alive import keep_alive  # Local import (your own module)
+from keep_alive import keep_alive  # Optional: only if you're using Replit-style hosting
 
 # Load environment variables
 load_dotenv()
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-#Guild ID for slash commands
-GUILD_ID = 1347682930465706004  # your server ID
+# Guild ID for slash command syncing
+GUILD_ID = 1347682930465706004  # Replace with your server ID
 
-# Intents and bot setup
+# Set up bot intents and instance
 intents = discord.Intents.default()
 intents.message_content = True
 
 client = commands.Bot(command_prefix='!', intents=intents)
-client.tree.copy_global_to(guild=discord.Object(id=GUILD_ID))
-
+client.tree.copy_global_to(guild=discord.Object(id=GUILD_ID))  # Force slash commands to your test server
 
 @client.event
 async def on_ready():
+    await client.tree.sync(guild=discord.Object(id=GUILD_ID))
     print(f"✅ Logged in as {client.user}")
+    print("✅ Slash commands synced to guild")
 
 async def main():
-    keep_alive()  # Start web server to keep bot alive on Replit
+    keep_alive()  # Optional: if using a web server to keep bot alive
     async with client:
-        # Load all your cogs here
-        await client.load_extension("clean_up_message")  # Your cleanup + approval cog
-       # await client.load_extension("points_cog")        # Your new points system cog
-        await client.start(os.getenv("DISCORD_TOKEN"))
+        await client.load_extension("clean_up_message")  # Load your combined cog
+        await client.start(DISCORD_TOKEN)
 
-# Run the bot
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Bot shut down manually.")
+        print("🛑 Bot manually stopped.")
