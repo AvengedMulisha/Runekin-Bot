@@ -146,10 +146,7 @@ class ApprovalCog(commands.Cog):
 class PointsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Register slash commands
-        self.bot.tree.add_command(self.linkrsn)
-        self.bot.tree.add_command(self.myrsn)
-        self.bot.tree.add_command(self.setrsnfor)
+
         self.data = self.load_data()
         self.sync_loop.start()
 
