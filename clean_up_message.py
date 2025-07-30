@@ -235,6 +235,7 @@ class PointsCog(commands.Cog):
     @app_commands.command(name="linkrsn", description="Link your RuneScape name and update your server nickname")
     @app_commands.describe(rsn="Your in-game RuneScape name")
     async def linkrsn(self, interaction: discord.Interaction, rsn: str):
+        print(f"🔗 Linking RSN for {interaction.user} to {rsn}")
         # Save RSN link
         if not os.path.exists("linked_rsn.json"):
             links = {}
