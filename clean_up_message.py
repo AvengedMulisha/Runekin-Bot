@@ -239,6 +239,7 @@ class PointsCog(commands.Cog):
     @app_commands.command(name="linkrsn", description="Link your RuneScape name and update your server nickname")
     @app_commands.describe(rsn="Your in-game RuneScape name")
     async def linkrsn(self, interaction: discord.Interaction, rsn: str):
+        await interaction.response.defer(ephemeral=True)
         print(f"🔗 Linking RSN for {interaction.user} to {rsn}")
         if not os.path.exists("linked_rsn.json"):
             links = {}
@@ -262,6 +263,7 @@ class PointsCog(commands.Cog):
 
     @app_commands.command(name="myrsn", description="Check the RSN linked to your account")
     async def myrsn(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if not os.path.exists("linked_rsn.json"):
             await interaction.response.send_message("⚠️ No RSN links found.", ephemeral=True)
             return
@@ -278,6 +280,7 @@ class PointsCog(commands.Cog):
     @app_commands.command(name="setrsnfor", description="Admin command to set or change another user's RSN")
     @app_commands.describe(member="The user to link", rsn="The RuneScape name to assign")
     async def setrsnfor(self, interaction: discord.Interaction, member: discord.Member, rsn: str):
+        await interaction.response.defer(ephemeral=True)
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ You do not have permission to do that.", ephemeral=True)
             return
@@ -303,6 +306,7 @@ class PointsCog(commands.Cog):
 
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
                 # Try linked RSN first
         linked_rsn = None
         if os.path.exists("linked_rsn.json"):
@@ -324,6 +328,7 @@ class PointsCog(commands.Cog):
     @app_commands.command(name="addpoints", description="Add points to a player (admin only)")
     @app_commands.describe(player="Enter the RSN of the player", amount="Points to add")
     async def addpoints(self, interaction: discord.Interaction, player: str, amount: int):
+        await interaction.response.defer(ephemeral=True)
         if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
             await interaction.response.send_message(
                 "❌ This command can only be used in the designated points channel.",
