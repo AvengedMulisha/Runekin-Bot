@@ -165,7 +165,7 @@ class PointsCog(commands.GroupCog):
 
         # Register slash command to guild
         self.bot.tree.add_command(self.addpoints, guild=discord.Object(id=1347682930465706004))
-        self.bot.tree.add_command(self.syncwom, guild=discord.Object(id=1347682930465706004))
+       #self.bot.tree.add_command(self.syncwom, guild=discord.Object(id=1347682930465706004))
 
     def cog_unload(self):
         self.sync_loop.cancel()
