@@ -210,6 +210,7 @@ class PointsCog(commands.GroupCog):
     @app_commands.command(name="mypoints", description="Check your rank and points.")
     async def mypoints(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
+
         rsn = interaction.user.display_name
         player = self.data.get(rsn)
 
@@ -227,7 +228,10 @@ class PointsCog(commands.GroupCog):
         await interaction.response.defer(ephemeral=True)
 
         if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.followup.send("❌ This command can only be used in the designated points channel.", ephemeral=True)
+            await interaction.followup.send(
+                "❌ This command can only be used in the designated points channel.",
+                ephemeral=True
+            )
             return
 
         if not interaction.user.guild_permissions.administrator:
@@ -239,7 +243,10 @@ class PointsCog(commands.GroupCog):
         self.data[player]["rank"] = self.get_rank(self.data[player]["points"])
         self.save_data()
 
-        await interaction.followup.send(f"✅ Added {amount} points to **{player}**. New total: {self.data[player]['points']}.", ephemeral=True)
+        await interaction.followup.send(
+            f"✅ Added {amount} points to **{player}**. New total: {self.data[player]['points']}.",
+            ephemeral=True
+        )
 
     @app_commands.command(name="leaderboard", description="Show the top players by points.")
     async def leaderboard(self, interaction: discord.Interaction):
@@ -274,3 +281,14 @@ class PointsCog(commands.GroupCog):
             print(f"🔃 Synced {len(synced)} slash commands.")
         except Exception as e:
             print(f"❌ Error syncing slash commands: {e}")
+
+
+
+
+# ========== EXTENSION ENTRY POINT ==========
+async def setup(bot):
+    await bot.add_cog(CleanupCog(bot))
+    await bot.add_cog(ApprovalCog(bot))
+    await bot.add_cog(PointsCog(bot))
+    print("✅ clean_up_message extension loaded.")
+
