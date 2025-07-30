@@ -21,16 +21,17 @@ client.tree.copy_global_to(guild=discord.Object(id=GUILD_ID))  # Force slash com
 
 @client.event
 async def on_ready():
-    guild = discord.Object(id=GUILD_ID)
+    # Optional: clear guild commands
+    await client.tree.clear_commands(guild=discord.Object(id=GUILD_ID))
+    await client.tree.sync(guild=discord.Object(id=GUILD_ID))
 
-    # Clear any previously registered commands in the guild (old leftovers)
-    client.tree.clear_commands(guild=guild)
-
-    # Resync with only the new ones
-    await client.tree.sync(guild=guild)
+    # 🔥 Clear global commands (one-time!)
+    await client.tree.clear_commands()        # No guild = global scope
+    await client.tree.sync()                  # Sync global to apply deletion
 
     print(f"✅ Logged in as {client.user}")
-    print("✅ Slash commands cleared and re-synced for guild")
+    print("✅ Global and guild slash commands cleared and re-synced")
+
 
 
 async def main():
