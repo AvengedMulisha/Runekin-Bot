@@ -251,28 +251,36 @@ class PointsCog(commands.GroupCog):
         self.sync_from_wise_old_man()
 
     @app_commands.command(name="addpoints", description="Add points to a player.")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def addpoints(self, interaction: discord.Interaction, rsn: str, points: int):
-        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.response.send_message("❌ This command can only be used in the designated channel.", ephemeral=True)
-            return
+@app_commands.checks.has_permissions(administrator=True)
+async def addpoints(self, interaction: discord.Interaction, rsn: str, points: int):
+    # Debugging logs
+    print(f"Command /addpoints triggered by {interaction.user} for RSN: {rsn} with points: {points}")
 
-        if rsn not in self.data:
-            self.data[rsn] = {
-                "points": 0,
-                "approved": False,
-                "rank": "Mind"
-            }
+    if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
+        await interaction.response.send_message("❌ This command can only be used in the designated channel.", ephemeral=True)
+        return
 
-        self.data[rsn]["points"] += points
-        self.data[rsn]["rank"] = self.get_rank(self.data[rsn]["points"])
-        self.save_data()
+    if rsn not in self.data:
+        self.data[rsn] = {
+            "points": 0,
+            "approved": False,
+            "rank": "Mind"
+        }
 
-        await interaction.response.send_message(
-            f"✅ Added **{points}** points to **{rsn}**.\n"
-            f"Total: **{self.data[rsn]['points']}** ({self.data[rsn]['rank']})",
-            ephemeral=True
-        )
+    # Update points and rank
+    self.data[rsn]["points"] += points
+    self.data[rsn]["rank"] = self.get_rank(self.data[rsn]["points"])
+    self.save_data()
+
+    # Log updated data
+    print(f"Updated points for {rsn}: {self.data[rsn]}")
+
+    await interaction.response.send_message(
+        f"✅ Added **{points}** points to **{rsn}**.\n"
+        f"Total: **{self.data[rsn]['points']}** ({self.data[rsn]['rank']})",
+        ephemeral=True
+    )
+
 
     @app_commands.command(name="syncwom", description="Force sync from Wise Old Man.")
     @app_commands.checks.has_permissions(administrator=True)
