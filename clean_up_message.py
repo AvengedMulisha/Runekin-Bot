@@ -1,17 +1,19 @@
-import discord
-import itertools
-import datetime
-import os
-import json
-import requests
 import asyncio
+import os
+import discord
 from discord.ext import commands, tasks
 from discord import app_commands
+from dotenv import load_dotenv
+import json
+import requests
+import datetime
+import itertools
 
 # ========== CONFIG ==========
 utc = datetime.timezone.utc
 cleanup_time = datetime.time(hour=0, minute=0, tzinfo=utc)
 
+# Channel IDs (adjust as needed)
 CHANNELS_TO_DELETE_FROM = [
     1383717273704857670,  # planned-events
     1385130581599457413,  # event-polls-and-payments
@@ -155,32 +157,30 @@ class ApprovalCog(commands.Cog):
 
 
 # ========== POINTS COG ==========
-from discord import app_commands
-
 class PointsCog(commands.GroupCog):
     def __init__(self, bot):
         self.bot = bot
         self.data = self.load_data()
         self.sync_loop.start()
 
-        # Register slash command to guild
+        # Register slash command to guild (or globally if needed)
         self.bot.tree.add_command(self.addpoints, guild=discord.Object(id=1347682930465706004))
-       #self.bot.tree.add_command(self.syncwom, guild=discord.Object(id=1347682930465706004))
-
-    def cog_unload(self):
-        self.sync_loop.cancel()
+        self.bot.tree.add_command(self.syncwom, guild=discord.Object(id=1347682930465706004))
 
     def load_data(self):
+        """Load existing player data from a file."""
         if os.path.exists(POINTS_FILE):
             with open(POINTS_FILE, "r") as f:
                 return json.load(f)
         return {}
 
     def save_data(self):
+        """Save updated player data to a file."""
         with open(POINTS_FILE, "w") as f:
             json.dump(self.data, f, indent=2)
 
     def get_rank(self, points):
+        """Get the rank for a player based on their points."""
         last_rank = "Air"
         for rank, threshold in sorted(RANK_THRESHOLDS.items(), key=lambda x: x[1]):
             if points >= threshold:
@@ -189,7 +189,46 @@ class PointsCog(commands.GroupCog):
                 break
         return last_rank
 
+    @app_commands.command(name="addpoints", description="Add points to a player.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def addpoints(self, interaction: discord.Interaction, rsn: str, points: int):
+        """Command to add points to a player."""
+        print(f"Command /addpoints triggered by {interaction.user} for RSN: {rsn} with points: {points}")
+
+        # Ensure the command is only usable in a specific channel
+        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
+            await interaction.response.send_message("❌ This command can only be used in the designated channel.", ephemeral=True)
+            return
+
+        # Initialize player if not in the data
+        if rsn not in self.data:
+            self.data[rsn] = {"points": 0, "approved": False, "rank": "Mind"}
+
+        # Update points and rank
+        self.data[rsn]["points"] += points
+        self.data[rsn]["rank"] = self.get_rank(self.data[rsn]["points"])
+        self.save_data()
+
+        # Respond to user
+        await interaction.response.send_message(
+            f"✅ Added **{points}** points to **{rsn}**.\n"
+            f"Total: **{self.data[rsn]['points']}** ({self.data[rsn]['rank']})",
+            ephemeral=True
+        )
+
+    @app_commands.command(name="syncwom", description="Force sync from Wise Old Man.")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def syncwom(self, interaction: discord.Interaction):
+        """Command to manually sync from Wise Old Man."""
+        await interaction.response.send_message("🔄 Syncing from Wise Old Man...", ephemeral=True)
+        try:
+            await asyncio.to_thread(self.sync_from_wise_old_man)
+            await interaction.followup.send("✅ Manual sync complete.", ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(f"❌ Sync failed: {e}", ephemeral=True)
+
     def sync_from_wise_old_man(self):
+        """Sync player data from Wise Old Man API."""
         try:
             print("🔄 Syncing from Wise Old Man...")
             response = requests.get(f"https://api.wiseoldman.net/v2/groups/{WOM_GROUP_ID}")
@@ -245,53 +284,6 @@ class PointsCog(commands.GroupCog):
         except Exception as e:
             print(f"❌ Error during Wise Old Man sync: {e}")
 
-    @tasks.loop(time=[datetime.time(minute=0, tzinfo=datetime.timezone.utc)])
-    async def sync_loop(self):
-        print("🕒 Running scheduled WOM sync...")
-        self.sync_from_wise_old_man()
-
-    @app_commands.command(name="addpoints", description="Add points to a player.")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def addpoints(self, interaction: discord.Interaction, rsn: str, points: int):
-        # Debugging logs
-        print(f"Command /addpoints triggered by {interaction.user} for RSN: {rsn} with points: {points}")
-
-        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.response.send_message("❌ This command can only be used in the designated channel.", ephemeral=True)
-            return
-
-        if rsn not in self.data:
-            self.data[rsn] = {
-                "points": 0,
-                "approved": False,
-                "rank": "Mind"
-        }
-
-    # Update points and rank
-        self.data[rsn]["points"] += points
-        self.data[rsn]["rank"] = self.get_rank(self.data[rsn]["points"])
-        self.save_data()
-
-    # Log updated data
-        print(f"Updated points for {rsn}: {self.data[rsn]}")
-
-        await interaction.response.send_message(
-            f"✅ Added **{points}** points to **{rsn}**.\n"
-            f"Total: **{self.data[rsn]['points']}** ({self.data[rsn]['rank']})",
-            ephemeral=True
-    )
-
-
-    @app_commands.command(name="syncwom", description="Force sync from Wise Old Man.")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def syncwom(self, interaction: discord.Interaction):
-        await interaction.response.send_message("🔄 Syncing from Wise Old Man...", ephemeral=True)
-        try:
-            await asyncio.to_thread(self.sync_from_wise_old_man)
-            await interaction.followup.send("✅ Manual sync complete.", ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(f"❌ Sync failed: {e}", ephemeral=True)
-
 
 # ========== EXTENSION ENTRY POINT ==========
 async def setup(bot):
@@ -299,3 +291,4 @@ async def setup(bot):
     await bot.add_cog(ApprovalCog(bot))
     await bot.add_cog(PointsCog(bot))
     print("✅ clean_up_message extension loaded.")
+
