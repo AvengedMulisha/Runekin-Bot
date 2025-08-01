@@ -2,7 +2,6 @@ import asyncio
 import os
 import discord
 from discord.ext import commands, tasks
-from discord import app_commands
 from dotenv import load_dotenv
 import json
 import requests
@@ -157,7 +156,7 @@ class ApprovalCog(commands.Cog):
 
 
 # ========== POINTS COG ==========
-class PointsCog(commands.GroupCog):
+class PointsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.data = self.load_data()
@@ -186,44 +185,6 @@ class PointsCog(commands.GroupCog):
             else:
                 break
         return last_rank
-
-    @app_commands.command(name="addpoints", description="Add points to a player.")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def addpoints(self, interaction: discord.Interaction, rsn: str, points: int):
-        """Command to add points to a player."""
-        print(f"Command /addpoints triggered by {interaction.user} for RSN: {rsn} with points: {points}")
-
-        # Ensure the command is only usable in a specific channel
-        if interaction.channel.id != ADDPOINTS_CHANNEL_ID:
-            await interaction.response.send_message("❌ This command can only be used in the designated channel.", ephemeral=True)
-            return
-
-        # Initialize player if not in the data
-        if rsn not in self.data:
-            self.data[rsn] = {"points": 0, "approved": False, "rank": "Mind"}
-
-        # Update points and rank
-        self.data[rsn]["points"] += points
-        self.data[rsn]["rank"] = self.get_rank(self.data[rsn]["points"])
-        self.save_data()
-
-        # Respond to user
-        await interaction.response.send_message(
-            f"✅ Added **{points}** points to **{rsn}**.\n"
-            f"Total: **{self.data[rsn]['points']}** ({self.data[rsn]['rank']})",
-            ephemeral=True
-        )
-
-    @app_commands.command(name="syncwom", description="Force sync from Wise Old Man.")
-    @app_commands.checks.has_permissions(administrator=True)
-    async def syncwom(self, interaction: discord.Interaction):
-        """Command to manually sync from Wise Old Man."""
-        await interaction.response.send_message("🔄 Syncing from Wise Old Man...", ephemeral=True)
-        try:
-            await asyncio.to_thread(self.sync_from_wise_old_man)
-            await interaction.followup.send("✅ Manual sync complete.", ephemeral=True)
-        except Exception as e:
-            await interaction.followup.send(f"❌ Sync failed: {e}", ephemeral=True)
 
     def sync_from_wise_old_man(self):
         """Sync player data from Wise Old Man API."""
