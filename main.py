@@ -21,21 +21,22 @@ client.tree.copy_global_to(guild=discord.Object(id=GUILD_ID))  # Force slash com
 
 @client.event
 async def on_ready():
-    # Optional: clear guild commands
-    await client.tree.clear_commands(guild=discord.Object(id=GUILD_ID))
-    await client.tree.sync(guild=discord.Object(id=GUILD_ID))
-
-    # 🔥 Clear global commands (one-time!)
-    await client.tree.clear_commands()        # No guild = global scope
-    await client.tree.sync()                  # Sync global to apply deletion
-
     print(f"✅ Logged in as {client.user}")
-    print("✅ Global and guild slash commands cleared and re-synced")
 
+    # Optional: clear guild-specific commands (if any)
+    guild = client.get_guild(GUILD_ID)
+    if guild:
+        await client.tree.clear_commands(guild=discord.Object(id=GUILD_ID))
+        await client.tree.sync(guild=discord.Object(id=GUILD_ID))
+        print(f"✅ Guild slash commands cleared and re-synced for {guild.name}.")
 
+    # 🔥 Clear all global commands (one-time action)
+    await client.tree.clear_commands()        # Remove global commands
+    await client.tree.sync()                  # Sync to apply deletion
+    print("✅ Global slash commands cleared and re-synced.")
 
 async def main():
-    keep_alive()  # Optional: if using a web server to keep bot alive
+    keep_alive()  # Optional: if using a web server to keep the bot alive (e.g., Replit)
     async with client:
         await client.load_extension("clean_up_message")  # Load your combined cog
         await client.start(DISCORD_TOKEN)
