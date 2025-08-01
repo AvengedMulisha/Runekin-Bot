@@ -9,9 +9,6 @@ from keep_alive import keep_alive  # Optional: only if you're using Replit-style
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Guild ID for slash command syncing
-GUILD_ID = 1347682930465706004  # Replace with your server ID
-
 # Set up bot intents and instance
 intents = discord.Intents.default()
 intents.message_content = True
@@ -21,20 +18,8 @@ client = commands.Bot(command_prefix='!', intents=intents)
 @client.event
 async def on_ready():
     print(f"✅ Logged in as {client.user}")
-
-    # Clear guild-specific commands (if any)
-    guild = client.get_guild(GUILD_ID)
-    if guild:
-        # Clear commands for a specific guild
-        await client.tree.clear_commands(guild=discord.Object(id=GUILD_ID))
-        # Sync commands with the guild
-        await client.tree.sync(guild=discord.Object(id=GUILD_ID))
-        print(f"✅ Guild slash commands cleared and re-synced for {guild.name}.")
-
-    # Clear all global commands (this will clear across all servers)
-    await client.tree.clear_commands()  # Clear global commands
-    await client.tree.sync()            # Sync global commands to re-register new ones
-    print("✅ Global slash commands cleared and re-synced.")
+    # This block can be removed if you no longer want to manage slash commands
+    print("Slash command management removed.")  # Inform that we're no longer managing slash commands
 
 async def main():
     keep_alive()  # Optional: if using a web server to keep the bot alive (e.g., Replit)
