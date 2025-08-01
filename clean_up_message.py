@@ -1,7 +1,7 @@
 import asyncio
 import os
 import discord
-from discord.ext import commands, tasks  # Ensure 'commands' and 'tasks' are imported
+from discord.ext import commands, tasks
 from discord import app_commands
 from dotenv import load_dotenv
 import json
@@ -164,10 +164,6 @@ class PointsCog(commands.GroupCog):
 
         # Define sync loop task (this will run periodically)
         self.sync_loop.start()
-
-        # Register slash command to guild (or globally if needed)
-        self.bot.tree.add_command(self.addpoints, guild=discord.Object(id=1347682930465706004))
-        self.bot.tree.add_command(self.syncwom, guild=discord.Object(id=1347682930465706004))
 
     def load_data(self):
         """Load existing player data from a file."""
