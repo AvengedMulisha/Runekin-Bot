@@ -10,7 +10,7 @@ import itertools
 
 # ========== CONFIG ==========
 utc = datetime.timezone.utc
-cleanup_time = datetime.time(hour=0, minute=0, tzinfo=utc)
+cleanup_time = datetime.time(hour=0, minute=16, tzinfo=utc)
 
 # Channel IDs (adjust as needed)
 CHANNELS_TO_DELETE_FROM = [
